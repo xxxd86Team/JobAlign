@@ -72,7 +72,7 @@ class DocumentHandler:
                 file_bytes = file.read()
                 image = Image.open(io.BytesIO(file_bytes))
                 # 如本机有中文语言包，可使用 lang='chi_sim+eng'
-                text = pytesseract.image_to_string(image,lang='chi_sim+eng')
+                text = pytesseract.image_to_string(image)
 
             else:
                 # 兜底：尝试文本方式读取
@@ -506,22 +506,25 @@ with col1:
 
 # ========= 4.2 多 JD 输入 =========
 with col2:
-    st.subheader("2. 目标岗位 (JD) — 可一次上传多个")
-    jd_input_method = st.radio("输入方式", ["文本粘贴（单个）", "文件上传（可多个）"], horizontal=True)
+    st.subheader("2. 目标岗位 (JD) — 可一次输入多个")
+    jd_input_method = st.radio("输入方式", ["文本粘贴（可多个）", "文件上传（可多个）"], horizontal=True)
     jd_entries = []
 
-    if jd_input_method == "文本粘贴（单个）":
-        jd_text = st.text_area(
-            "粘贴职位描述（单个 JD）",
-            height=220,
-            placeholder="职位描述\n岗位职责...\n任职要求..."
-        )
-        if jd_text.strip():
-            jd_entries.append({
-                "index": 1,
-                "title": "文本JD",
-                "text": jd_text
-            })
+    if jd_input_method == "文本粘贴（可多个）":
+        num_jd = st.number_input("计划粘贴的 JD 数量", min_value=1, max_value=10, value=1, step=1)
+        num_jd = int(num_jd)
+        for i in range(num_jd):
+            jd_text_i = st.text_area(
+                f"JD {i + 1} 文本（例如：AI 产品实习 / 数据分析实习等）",
+                height=160,
+                key=f"jd_text_{i + 1}"
+            )
+            if jd_text_i.strip():
+                jd_entries.append({
+                    "index": i + 1,
+                    "title": f"文本JD_{i + 1}",
+                    "text": jd_text_i
+                })
     else:
         jd_files = st.file_uploader(
             "上传 JD 文件（可多选，支持 PDF / Word / 文本 / 图片）",
@@ -563,7 +566,7 @@ if analyze_btn:
     if not resume_text or not resume_text.strip():
         st.warning("⚠️ 请先上传或粘贴简历。")
     elif not jd_entries:
-        st.warning("⚠️ 请至少提供 1 个 JD（可多选）。")
+        st.warning("⚠️ 请至少提供 1 个 JD（可多条文本或多文件）。")
     elif config_mode != "演示模式 (Demo)" and not api_key:
         st.error("⚠️ 请输入 API Key 才能使用 AI 功能。")
     else:
